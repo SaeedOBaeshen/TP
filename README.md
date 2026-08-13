@@ -1,10 +1,8 @@
 # Decision Service
 
-This service evaluates merchant purchase transactions and returns a financing decision including the approved amount, interest rate, repayment terms, and the reason for the decision.
-
 ## Prerequisites
 
-Install the following before running the service:
+Before running the service locally, make sure the following are installed:
 
 * Java 25
 * Maven
@@ -20,7 +18,9 @@ docker --version
 docker compose version
 ```
 
-## Build the Application
+Make sure Docker Desktop is running and configured to use Linux containers.
+
+## Build the Spring Boot JAR
 
 From the project root directory, run:
 
@@ -28,104 +28,81 @@ From the project root directory, run:
 mvn clean package
 ```
 
-This compiles the application, runs the unit tests, and creates the Spring Boot JAR under:
+This compiles the project, runs the unit tests, and generates:
 
 ```text
-target/
-```
-
-For example:
-
-```text
-target/tradepay-0.0.1-SNAPSHOT.jar
-```
-
-## Run Unit Tests
-
-To run the tests independently:
-
-```bash
-mvn test
-```
-
-A successful test run should end with:
-
-```text
-BUILD SUCCESS
-```
-
-## Build the Docker Image
-
-Make sure Docker Desktop is running and using Linux containers.
-
-From the project root, run:
-
-```bash
-docker build -t tradepay-decision-service .
-```
-
-Verify the image was created:
-
-```bash
-docker images
-```
-
-You should see:
-
-```text
-tradepay-decision-service
+target/decision-service-0.0.1.jar
 ```
 
 ## Run with Docker
 
-Start the service:
+Build the Docker image:
 
 ```bash
-docker run -d --name tradepay-decision -p 8080:8080 tradepay-decision-service
+docker build -t decision-service .
 ```
 
-The API will be available at:
+Run the container:
+
+```bash
+docker run -d --name decision-service -p 8080:8080 decision-service
+```
+
+Verify that it is running:
+
+```bash
+docker ps
+```
+
+View application logs:
+
+```bash
+docker logs -f decision-service
+```
+
+The service is available at:
 
 ```text
 http://localhost:8080
 ```
 
-### View Logs
+The decision endpoint is:
 
-```bash
-docker logs -f tradepay-decision
+```text
+POST http://localhost:8080/decision
 ```
 
-### Stop the Container
+Stop the container:
 
 ```bash
-docker stop tradepay-decision
+docker stop decision-service
 ```
 
-### Start the Existing Container Again
+Start the existing container again:
 
 ```bash
-docker start tradepay-decision
+docker start decision-service
 ```
 
-### Remove the Container
+Remove the container:
 
 ```bash
-docker rm tradepay-decision
+docker stop decision-service
+docker rm decision-service
 ```
 
 ## Run with Docker Compose
 
-Create a `compose.yaml` file in the project root:
+The repository includes a `compose.yaml` file similar to:
 
 ```yaml
 services:
-  tradepay-decision:
+  decision-service:
     build:
       context: .
       dockerfile: Dockerfile
-    image: tradepay-decision-service
-    container_name: tradepay-decision
+    image: decision-service
+    container_name: decision-service
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -137,7 +114,7 @@ Build and start the service:
 docker compose up --build -d
 ```
 
-Check that it is running:
+Verify that the service is running:
 
 ```bash
 docker compose ps
@@ -146,118 +123,41 @@ docker compose ps
 View logs:
 
 ```bash
-docker compose logs -f
+docker compose logs -f decision-service
 ```
 
-Stop the service:
+Stop and remove the Compose-managed container:
 
 ```bash
 docker compose down
 ```
 
-To rebuild after code changes:
+After making application code changes, rebuild the JAR and restart the Docker Compose service:
 
 ```bash
 mvn clean package
 docker compose up --build -d
 ```
 
-## Test the Decision API
-
-Send a POST request to:
-
-```text
-POST http://localhost:8080/decision
-```
-
-Use this header:
-
-```text
-Content-Type: application/json
-```
-
-Example request:
-
-```json
-{
-  "merchant_id": "M1021",
-  "merchant_business_description": "A small grocery store in a residential area of Riyadh, operating for 5 years.",
-  "risk_tier": "B",
-  "credit_limit": 50000,
-  "current_exposure": 30000,
-  "transaction_amount": 12000,
-  "monthly_purchase_volume": 65000,
-  "inventory_level": {
-    "sku_A": 100,
-    "sku_B": 50,
-    "sku_C": 200
-  }
-}
-```
-
-Example response:
-
-```json
-{
-  "decision": "APPROVED",
-  "approved_amount": 12000,
-  "interest_rate": 1.75,
-  "repayment_terms": "60 days",
-  "reason": "The transaction satisfies the merchant's credit and risk requirements."
-}
-```
-
-A partial approval may look like:
-
-```json
-{
-  "decision": "PARTIALLY_APPROVED",
-  "approved_amount": 8000,
-  "interest_rate": 1.5,
-  "repayment_terms": "30 days",
-  "reason": "The transaction amount exceeds the remaining credit limit. The approved amount is based on the available credit."
-}
-```
-
 ## Troubleshooting
 
-If Docker reports that port `8080` is already in use, stop any locally running Spring Boot application or use another host port:
+If port `8080` is already in use, stop the application currently using that port or map a different host port:
 
 ```bash
-docker run -d --name tradepay-decision -p 8081:8080 tradepay-decision-service
+docker run -d --name decision-service -p 8081:8080 decision-service
 ```
 
-Then access the API at:
+The API will then be available at:
 
 ```text
 http://localhost:8081/decision
 ```
 
-If Docker reports that the container name already exists:
+If Docker reports that the container name already exists, remove the old container:
 
 ```bash
-docker rm tradepay-decision
+docker stop decision-service
+docker rm decision-service
 ```
 
-Then run the container again.
-
-If Docker reports that it cannot connect to `dockerDesktopLinuxEngine`, start Docker Desktop and wait until the Linux Docker engine is running.
-
-## Dockerfile
-
-The project uses a Linux-based Java 25 runtime image:
-
-```dockerfile
-FROM eclipse-temurin:25-jre
-
-WORKDIR /app
-
-COPY target/*.jar app.jar
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
-```
-
-The Spring Boot JAR is built on the host using Maven and then copied into the Linux container image.
-
+If Docker cannot connect to `dockerDesktopLinuxEngine`, start Docker Desktop and wait until the Linux Docker engine is running.
