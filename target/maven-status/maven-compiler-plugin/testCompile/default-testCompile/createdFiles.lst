@@ -1,0 +1,8 @@
+com\tradepay\demo\tradepay\rule\RiskTierRuleTest.class
+com\tradepay\demo\tradepay\TradepayApplicationTests.class
+com\tradepay\demo\tradepay\rule\CreditCapacityRuleTest.class
+com\tradepay\demo\tradepay\service\PricingServiceTest.class
+com\tradepay\demo\tradepay\service\DecisionServiceTest.class
+com\tradepay\demo\tradepay\rule\TransactionVolumeRuleTest.class
+com\tradepay\demo\tradepay\rule\ExposureUtilizationRuleTest.class
+com\tradepay\demo\tradepay\rule\InventoryRuleTest.class
